@@ -3,6 +3,14 @@ body {
     font-family: Arial, sans-serif;
 }
 
+#tools {
+    padding: 10px;
+    background: #eaeaea;
+    display: flex;
+    gap: 10px;
+}
+
+
 #map {
     height: 70vh;
 }
@@ -23,4 +31,10 @@ body {
     color: #0f0;
     height: 20vh;
     overflow: auto;
+}
+
+.parameters {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
 }

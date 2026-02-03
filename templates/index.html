@@ -4,27 +4,57 @@
     <meta charset="UTF-8">
     <title>Прогноз погоды</title>
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- MapLibre GL -->
+    <link
+        href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"
+        rel="stylesheet"
+    />
+    <script
+        src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"
+        defer
+    ></script>
+
+    <!-- Стили приложения -->
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
 </head>
 <body>
 
+<!-- Панель инструментов -->
+<div id="tools">
+    <strong>Инструменты:</strong>
+    <button id="toolPoint">Точка</button>
+    <button id="toolArea">Область</button>
+</div>
+
+<!-- Параметры погоды -->
 <div id="controls">
-    <h3>Параметры</h3>
-    <label><input type="checkbox" value="temperature"> Температура</label>
-    <label><input type="checkbox" value="wind_speed"> Скорость ветра</label>
-    <label><input type="checkbox" value="wind_direction"> Направление ветра</label>
-    <label><input type="checkbox" value="precipitation"> Осадки</label>
+    <h3>Параметры погоды</h3>
+
+    <div class="parameters">
+        <label><input type="checkbox" value="temperature"> Температура</label>
+        <label><input type="checkbox" value="wind_speed"> Скорость ветра</label>
+        <label><input type="checkbox" value="wind_direction"> Направление ветра</label>
+        <label><input type="checkbox" value="precipitation"> Осадки</label>
+        <label><input type="checkbox" value="pressure"> Давление</label>
+    </div>
 
     <button id="getForecast">Получить прогноз</button>
 </div>
 
+<!-- Карта -->
 <div id="map"></div>
 
+<!-- Вывод результата -->
 <pre id="output"></pre>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<!-- Основная логика -->
+<script
+    src="{{ url_for('static', filename='js/main.js') }}"
+    defer
+></script>
 
 </body>
 </html>

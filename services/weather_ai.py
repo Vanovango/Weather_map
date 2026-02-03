@@ -25,6 +25,9 @@ def generate_forecast(lat: float, lon: float, parameters: list[str]) -> list[dic
         if "precipitation" in parameters:
             entry["precipitation"] = round(random.uniform(0, 10), 1)
 
+        if "pressure" in parameters:
+            entry["pressure"] = round(random.uniform(720, 780), 1)  # мм рт. ст.
+
         forecast.append(entry)
 
     return forecast
