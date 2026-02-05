@@ -1,0 +1,97 @@
+@import "node_modules/ol/ol.css";
+
+html, body {
+  margin: 0;
+  height: 100%;
+}
+
+#map {
+  position: absolute;
+  top: 18%;
+  bottom: 0;
+  width: 100%;
+}
+
+#header {
+  margin-left: 2%;
+}
+
+#conditions_line {
+  align-items: center;
+  align-content: center;
+  margin-left: 2%;
+}
+
+/* Кнопка погодного условия */
+.condition {
+  background-color: black;
+  color: white;
+  text-align: center;
+  font-size: 18px;
+  left: 0;
+  right: 0;
+  width: 100px;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 25px;
+  border: 15px;
+  width: 200px;
+  height: 30px;
+  transition: all 0.5s ease;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.condition:hover {
+  background-color: rgb(83, 83, 83);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Стиль для активной (выделенной) кнопки */
+.condition.active {
+  background-color: rgb(123, 248, 61);
+  color: black;
+  box-shadow: 0 0 10px rgba(123, 248, 61, 0.5);
+}
+
+/* Эффект нажатия */
+.condition:active {
+  transform: translateY(1px);
+}
+
+
+
+#up_line {
+  align-items: center;
+  align-content: center;
+  margin-left: 2%;
+}
+
+/* Кнопка получить погоду */
+.get_weather {
+  background-color: rgb(150, 255, 131);
+  color: rgb(0, 0, 0);
+  text-align: center;
+  font-size: 18px;
+  left: 0%;
+  right: 0;
+  width: 100px;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 25px;
+  border: 15px;
+  width: 200px;
+  height: 30px;
+  transition: all 0.5s ease;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.get_weather:hover {
+  background-color: rgb(58, 245, 25);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}

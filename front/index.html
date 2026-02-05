@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="https://openlayers.org/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Using OpenLayers with Vite</title>
+  </head>
+
+  <body>
+    <div id="up_line" style="display:flex; gap:10px;">
+      <h1 id="header">Выберите нужные параметры</h1>
+      <button class="get_weather">Рассчитать погоду</button>
+    </div>
+    
+
+    <div id="conditions_line" style="display:flex; gap:10px;">
+      <button class="condition" data-param="wind">Ветер</button>
+      <button class="condition" data-param="temperature">Температура</button>
+      <button class="condition" data-param="humidity">Влажность</button>
+      <button class="condition" data-param="pressure">Давление</button>
+      <button class="condition" data-param="visibility">Видимость</button>
+      <button class="condition" data-param="precipitation">Осадки</button>
+    </div>  
+
+    <div id="map"></div>
+
+    <script type="module" src="./main.js"></script>
+    <script>
+      // Инициализация выделения кнопок
+      document.addEventListener('DOMContentLoaded', function() {
+        const conditionButtons = document.querySelectorAll('.condition');
+        
+        // Загружаем сохраненные выборы из localStorage
+        const savedSelections = JSON.parse(localStorage.getItem('weatherSelections')) || [];
+        
+        // Восстанавливаем выделения
+        conditionButtons.forEach(button => {
+          const param = button.getAttribute('data-param');
+          if (savedSelections.includes(param)) {
+            button.classList.add('active');
+          }
+          
+          // Добавляем обработчик клика
+          button.addEventListener('click', function() {
+            // Переключаем класс active
+            this.classList.toggle('active');
+            
+            // Получаем текущий параметр
+            const currentParam = this.getAttribute('data-param');
+            
+            // Получаем текущие сохраненные выборы
+            let selections = JSON.parse(localStorage.getItem('weatherSelections')) || [];
+            
+            // Добавляем или удаляем параметр
+            if (this.classList.contains('active')) {
+              if (!selections.includes(currentParam)) {
+                selections.push(currentParam);
+              }
+            } else {
+              selections = selections.filter(param => param !== currentParam);
+            }
+            
+            // Сохраняем в localStorage
+            localStorage.setItem('weatherSelections', JSON.stringify(selections));
+            
+            // Можно также отправить данные в основной скрипт
+            // Для интеграции с картой
+            window.dispatchEvent(new CustomEvent('weatherParamsChanged', {
+              detail: { selections }
+            }));
+            
+            console.log('Выбранные параметры:', selections);
+          });
+        });
+        
+      });
+    </script>
+  </body>
+</html>
