@@ -109,7 +109,7 @@ async function sendWeatherData(selections, coordinates) {
       requestData.coordinates = coordinates;
     }
     
-    const response = await axios.post(`${SERVER_URL}/api/weather/`, requestData);
+    const response = await axios.post(`${SERVER_URL}/weather/`, requestData);
     
     let successMessage = `✅ Данные отправлены!<br>Параметры: ${selections.join(', ')}`;
     if (coordinates) {

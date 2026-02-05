@@ -38,7 +38,7 @@ async def root():
         "last_requests": last_requests[-5:] if last_requests else []
     }
 
-@app.post("/api/weather/")
+@app.post("/weather/")
 async def get_weather(weather_request: WeatherRequest):
     """Эндпоинт для получения данных о погодных параметрах"""
     
@@ -84,7 +84,7 @@ async def get_weather(weather_request: WeatherRequest):
     
     return response_data
 
-@app.get("/api/debug/")
+@app.get("/debug/")
 async def get_debug_info():
     """Эндпоинт для отладки - показывает историю запросов"""
     return {
