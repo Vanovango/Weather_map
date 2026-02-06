@@ -159,3 +159,45 @@ html, body {
   color: #ccc;
   font-size: 10px;
 }
+
+
+/* Добавьте в конец файла */
+
+/* Информация о координатах */
+#coordinate-info {
+  font-family: 'Arial', sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+#coordinate-info strong {
+  color: #90ee90;
+}
+
+#coordinate-info small {
+  color: #ccc;
+  font-size: 10px;
+}
+
+/* Кнопки параметров графика */
+.chart-param-btn {
+  transition: all 0.3s ease !important;
+}
+
+.chart-param-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+}
+
+/* Адаптивность для окна графика */
+@media (max-width: 768px) {
+  #weather-chart-container {
+    width: 95% !important;
+    height: 85vh !important;
+    padding: 15px !important;
+  }
+  
+  #weather-chart {
+    max-height: 60vh !important;
+  }
+}
