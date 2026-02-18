@@ -1,0 +1,37 @@
+{
+  "model": "fourcastnet3",
+  "run_time": "20260205T06000000",
+  "times": [
+    "20260205T060000Z",
+    "20260205T120000Z",
+    "20260205T180000Z"
+  ],
+  "variables": [
+    {
+      "id": "t2m",
+      "name": "Temperature",
+      "unit": "C",
+      "min": -40,
+      "max": 45,
+      "times": [
+        "20260205T060000Z",
+        "20260205T120000Z",
+        "20260205T180000Z"
+      ],
+      "tileTemplate": "/tiles/fourcastnet3/t2m/{time}/{z}/{x}/{y}.png"
+    },
+    {
+      "id": "wind",
+      "name": "Wind speed",
+      "unit": "m/s",
+      "min": 0,
+      "max": 30,
+      "times": [
+        "20260205T060000Z",
+        "20260205T120000Z",
+        "20260205T180000Z"
+      ],
+      "tileTemplate": "/tiles/fourcastnet3/wind/{time}/{z}/{x}/{y}.png"
+    }
+  ]
+}

@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Weather map (MapLibre)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet"/>
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #map { height: 100%; width: 100%; }
+
+    .panel {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 10;
+      background: white;
+      padding: 10px 12px;
+      border-radius: 10px;
+      box-shadow: 0 2px 14px rgba(0,0,0,0.18);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-size: 14px;
+      min-width: 320px;
+    }
+    .row { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+    label { min-width: 70px; color: #222; }
+    select, input[type="range"] { flex: 1; }
+    select { padding: 6px; }
+
+    .status { margin-top: 10px; font-size: 12px; color: #444; }
+    .status b { color: #000; }
+
+    .timebar {
+      display: grid;
+      grid-template-columns: 70px 1fr;
+      gap: 10px;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .timebar small { color: #444; }
+
+    .legend {
+      margin-top: 12px;
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+    }
+    .legend-title { font-size: 12px; color: #222; margin-bottom: 6px; }
+    .legend-bar {
+      height: 12px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.15);
+    }
+    .legend-scale {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 12px;
+      color: #333;
+    }
+
+    .clickbox {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      z-index: 10;
+      background: rgba(255,255,255,0.92);
+      padding: 8px 10px;
+      border-radius: 10px;
+      box-shadow: 0 2px 14px rgba(0,0,0,0.18);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-size: 13px;
+      max-width: 360px;
+    }
+    .clickbox code { font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div class="panel">
+  <div><b>Погода</b></div>
+
+  <div class="row">
+    <label>Слой</label>
+    <select id="layer"></select>
+  </div>
+
+  <div class="timebar">
+    <label>Время</label>
+    <div>
+      <input id="timeSlider" type="range" min="0" max="0" value="0" step="1"/>
+      <div style="display:flex; justify-content:space-between; margin-top:4px;">
+        <small id="timeText">—</small>
+        <small><span id="timeIdx">0</span>/<span id="timeMax">0</span></small>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-title" id="legendTitle">—</div>
+    <div class="legend-bar" id="legendBar"></div>
+    <div class="legend-scale">
+      <span id="legendMin">—</span>
+      <span id="legendMax">—</span>
+    </div>
+  </div>
+
+  <div class="status" id="status">Загрузка…</div>
+</div>
+
+<div class="clickbox" id="clickbox" style="display:none;"></div>
+
+<script>
+  // ===== НАСТРОЙКИ (один origin: storage/ + http.server) =====
+  const STORAGE_BASE = "";                   // важно: относительные пути
+  const CATALOG_URL = "/metadata/catalog.json";
+
+  // ===== КАРТА =====
+  const map = new maplibregl.Map({
+    container: "map",
+    style: {
+      version: 8,
+      sources: {
+        osm: {
+          type: "raster",
+          tiles: [
+            "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          ],
+          tileSize: 256,
+          maxzoom: 19
+        }
+      },
+      layers: [{ id: "osm", type: "raster", source: "osm" }]
+    },
+    center: [37, 56],
+    zoom: 4,
+    maxZoom: 6
+  });
+  map.addControl(new maplibregl.NavigationControl(), "top-right");
+
+  // ===== UI =====
+  const layerSelect = document.getElementById("layer");
+  const timeSlider = document.getElementById("timeSlider");
+  const timeText = document.getElementById("timeText");
+  const timeIdx = document.getElementById("timeIdx");
+  const timeMax = document.getElementById("timeMax");
+  const statusEl = document.getElementById("status");
+
+  const legendTitle = document.getElementById("legendTitle");
+  const legendBar = document.getElementById("legendBar");
+  const legendMin = document.getElementById("legendMin");
+  const legendMax = document.getElementById("legendMax");
+
+  const clickbox = document.getElementById("clickbox");
+
+  let catalog = null;
+  let activeLayerId = null;
+
+  // Цветовые градиенты (должны соответствовать тому, чем красил make_tiles.py)
+  // make_tiles.py использует matplotlib cmap: coolwarm / viridis
+  // Здесь — приблизительные CSS-градиенты, визуально похожие.
+  const GRADIENTS = {
+    t2m: "linear-gradient(90deg, #3b4cc0, #8db0fe, #e6e6e6, #f5a482, #b40426)",
+    wind: "linear-gradient(90deg, #440154, #3b528b, #21918c, #5ec962, #fde725)"
+  };
+
+  function setStatus(text) { statusEl.textContent = text; }
+
+  function clearSelect(sel) { while (sel.firstChild) sel.removeChild(sel.firstChild); }
+  function addOption(sel, value, label) {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = label;
+    sel.appendChild(opt);
+  }
+
+  function prettyTime(t) {
+    const m = t.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
+    if (!m) return t;
+    return `${m[1]}-${m[2]}-${m[3]} ${m[4]}:${m[5]} UTC`;
+  }
+
+  function buildTileUrl(varId, time) {
+    const v = catalog.variables.find(x => x.id === varId);
+    return `${STORAGE_BASE}${v.tileTemplate.replace("{time}", time)}`;
+  }
+
+  function removeWeatherLayer() {
+    if (activeLayerId && map.getLayer(activeLayerId)) map.removeLayer(activeLayerId);
+    if (activeLayerId && map.getSource(activeLayerId)) map.removeSource(activeLayerId);
+    activeLayerId = null;
+  }
+
+  function addWeatherLayer(varId, time) {
+    removeWeatherLayer();
+
+    const url = buildTileUrl(varId, time);
+    const layerId = `weather-${varId}`;
+
+    map.addSource(layerId, {
+      type: "raster",
+      tiles: [url],
+      tileSize: 256,
+      minzoom: 0,
+      maxzoom: 6
+    });
+
+    map.addLayer({
+      id: layerId,
+      type: "raster",
+      source: layerId,
+      paint: { "raster-opacity": 0.75 }
+    });
+
+    activeLayerId = layerId;
+  }
+
+  function updateLegend(varId) {
+    const v = catalog.variables.find(x => x.id === varId);
+    legendTitle.textContent = `${v.name} (${v.unit})`;
+    legendBar.style.background = GRADIENTS[varId] || "linear-gradient(90deg, #000, #fff)";
+    legendMin.textContent = `${v.min} ${v.unit}`;
+    legendMax.textContent = `${v.max} ${v.unit}`;
+  }
+
+  function refresh() {
+    if (!catalog) return;
+
+    const varId = layerSelect.value;
+    const idx = Number(timeSlider.value);
+    const times = catalog.times && catalog.times.length ? catalog.times : (catalog.variables[0]?.times || []);
+    const time = times[idx];
+
+    timeText.textContent = prettyTime(time);
+    timeIdx.textContent = String(idx + 1);
+    timeMax.textContent = String(times.length);
+
+    updateLegend(varId);
+
+    const v = catalog.variables.find(x => x.id === varId);
+    setStatus(`Модель: ${catalog.model} · ${v.name} (${v.unit}) · ${prettyTime(time)}`);
+
+    if (!map.isStyleLoaded()) {
+      map.once("load", () => addWeatherLayer(varId, time));
+    } else {
+      addWeatherLayer(varId, time);
+    }
+  }
+
+  async function loadCatalog() {
+    const r = await fetch(CATALOG_URL, { cache: "no-store" });
+    if (!r.ok) throw new Error(`Cannot load catalog.json: ${r.status}`);
+    return await r.json();
+  }
+
+  function initUI() {
+    clearSelect(layerSelect);
+
+    for (const v of catalog.variables) addOption(layerSelect, v.id, `${v.name} (${v.unit})`);
+
+    const times = catalog.times && catalog.times.length ? catalog.times : (catalog.variables[0]?.times || []);
+    if (!times.length) throw new Error("No times in catalog.");
+
+    timeSlider.min = "0";
+    timeSlider.max = String(times.length - 1);
+    timeSlider.value = "0";
+    timeSlider.step = "1";
+
+    layerSelect.value = catalog.variables[0].id;
+
+    layerSelect.addEventListener("change", refresh);
+    timeSlider.addEventListener("input", refresh);
+
+    refresh();
+  }
+
+  // ===== Клик по карте: координаты + ссылка на потенциальный тайл для отладки =====
+  function lonLatToTileXY(lon, lat, z) {
+    const n = 2 ** z;
+    const x = Math.floor((lon + 180) / 360 * n);
+    const latRad = lat * Math.PI / 180;
+    const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
+    return {x, y};
+  }
+
+  map.on("click", (e) => {
+    if (!catalog) return;
+
+    const lon = e.lngLat.lng;
+    const lat = e.lngLat.lat;
+
+    const varId = layerSelect.value;
+    const idx = Number(timeSlider.value);
+    const times = catalog.times && catalog.times.length ? catalog.times : (catalog.variables[0]?.times || []);
+    const time = times[idx];
+
+    // берем текущий zoom карты, но ограничиваем 0..6 (как у тайлов)
+    const z = Math.max(0, Math.min(6, Math.round(map.getZoom())));
+    const {x, y} = lonLatToTileXY(lon, lat, z);
+
+    const url = buildTileUrl(varId, time)
+      .replace("{z}", z).replace("{x}", x).replace("{y}", y);
+
+    clickbox.style.display = "block";
+    clickbox.innerHTML = `
+      <div><b>Точка</b>: lat=${lat.toFixed(4)}, lon=${lon.toFixed(4)}</div>
+      <div><b>Тайл</b>: z=${z}, x=${x}, y=${y}</div>
+      <div><a href="${url}" target="_blank">Открыть PNG тайла</a></div>
+      <div style="margin-top:6px;"><code>${url}</code></div>
+      <div style="margin-top:6px; font-size:12px; color:#555;">
+        (Значение в точке добавим после подключения API /point)
+      </div>
+    `;
+  });
+
+  (async () => {
+    try {
+      catalog = await loadCatalog();
+      initUI();
+    } catch (e) {
+      console.error(e);
+      setStatus("Ошибка: не удалось загрузить catalog.json");
+    }
+  })();
+</script>
+
+</body>
+</html>
